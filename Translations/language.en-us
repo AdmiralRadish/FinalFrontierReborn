@@ -1,0 +1,168 @@
+TEXT_RIBBON > Ribbon
+RN_X0 > Diamond Ribbon
+RD_X0 > The highest honor awarded for exceptional courage, unselfishness and valor
+RN_X1 > Inter Sidera Ribbon
+RD_X1 > "Among the Stars" - A commemorative ribbon for fallen kerbonauts
+RN_X2 > Kerbalkind Ribbon
+RD_X2 > Honorary retirement award for service to Kerbalkind
+RN_X4 > Station Ribbon
+RD_X4 > custom station ribbon
+RN_X5 > Spaceplane Ribbon
+RD_X5 > custom spaceplane ribbon
+RN_X6 > Certified Badass Ribbon
+RD_X6 > Awarded for ludicrous, near-impossible and brave endeavor
+RN_X21 > Test Pilot Ribbon
+RD_X21 > Awarded for courage in flying in experimental craft
+RN_X22 > Expeditionary Command Ribbon
+RD_X22 > Awarded for being in command of a significant expedition, station or base
+RN_X23 > Mission Command Ribbon
+RD_X23 > Awarded for being in command of a small scale mission
+RN_X24 > Chief Scientist Ribbon
+RD_X24 > Awarded for being a Lead Scientist on a significant expedition, or a mission with a major scientific task
+RN_X25 > Chief Engineering Ribbon
+RD_X25 > Awarded for being the Lead Engineer on a significant expedition or mission with a major engineering task
+RN_X26 > Space Search & Rescue Ribbon
+RD_X26 > Awarded for being involved in a search and rescue mission in space
+RN_X27 > Wings Ribbon
+RD_X27 > Awarded for piloting a plane in atmosphere
+RN_X28 > Space Wings Ribbon
+RD_X28 > Awarded for piloting a spaceplane in and out of atmosphere
+RN_X29 > Chief Operations Ribbon
+RD_X29 > Awarded for being the lead officer in charge of operations on a significant expedition or mission with a major piloting task or series of tasks
+RN_X30 > Arrow Ribbon
+RD_X30 > 
+RN_X31 > Qualified Scientist Ribbon
+RD_X31 > Awarded for having the necessary skills and knowledge, and completing the space mission training program
+RN_X32 > Qualified Operations Ribbon
+RD_X32 > Awarded for having the necessary skills and knowledge, and completing the space mission training program
+RN_X33 > Qualified Engineering Ribbon
+RD_X33 > Awarded for having the necessary skills and knowledge, and completing the space mission training program
+RN_X34 > Specialist Scientist Ribbon
+RD_X34 > Awarded for developing and demonstrating specialist aptitude in field activities for the Kerbal Space Program
+RN_X35 > Specialist Operations Ribbon
+RD_X35 > Awarded for developing and demonstrating specialist aptitude in field activities for the Kerbal Space Program
+RN_X36 > Specialist Engineering Ribbon
+RD_X36 > Awarded for developing and demonstrating specialist aptitude in field activities for the Kerbal Space Program
+RN_X37 > Senior Scientist Ribbon
+RD_X37 > Awarded for leadership, significant experience and outstanding technical aptitude in field activities for the Kerbal Space Program
+RN_X38 > Senior Operations Ribbon
+RD_X38 > Awarded for leadership, significant experience and outstanding technical aptitude in field activities for the Kerbal Space Program
+RN_X39 > Senior Engineering Ribbon
+RD_X39 > Awarded for leadership, significant experience and outstanding technical aptitude in field activities for the Kerbal Space Program
+RN_X40 > STM20 Ribbon
+RD_X40 > no description
+RN_X41 > STM21 Ribbon
+RD_X41 > no description
+RN_X42 > Repair In Danger Ribbon
+RD_X42 > Awarded for courage demonstrated in engaging in repair activities in dangerous circumstances
+RN_X43 > Rover Specialist Ribbon
+RD_X43 > Awarded for having developed skills and expertise as a driver of a land vehicle
+RN_X44 > EVA Specialist Ribbon
+RD_X44 > Awarded for having developed skills and expertise in conducting and overseeing EVA activities
+RN_X45 > Apprentice Chef Ribbon
+RD_X45 > no description
+RN_X46 > Chef de Partie  Ribbon
+RD_X46 > no description
+RN_X47 > Sous Chef Ribbon
+RD_X47 > no description
+RN_X48 > Chef de Cuisine Ribbon
+RD_X48 > no description
+RN_X70 > Bronze Heli Pilot Ribbon
+RD_X70 > no description
+RN_X71 > Silver Heli Pilot Ribbon
+RD_X71 > no description
+RN_X72 > Bronze S25 Mission Specialist Ribbon
+RD_X72 > no description
+RN_X73 > Silver S25 Mission Specialist Ribbon
+RD_X73 > no description
+RN_X74 > Bronze KSO Mission Specialist Ribbon
+RD_X74 > no description
+RN_X75 > Silver KSO Mission Specialist Ribbon
+RD_X75 > no description
+RN_X76 > Bronze Shuttle Pilot Ribbon
+RD_X76 > no description
+RN_X77 > Silver Shuttle Pilot Ribbon
+RD_X77 > no description
+RN_X80 > United Kerbdom Ribbon
+RD_X80 > 
+RN_X81 > Kovjet Coprorative Ribbon
+RD_X81 > 
+RN_X82 > Republic of Kinesa Ribbon
+RD_X82 > 
+RN_X83 > The Neutral Nation Ribbon
+RD_X83 > 
+RN_X84 > KSA Ribbon
+RD_X84 > 
+RN_X85 > Kryades Ribbon
+RD_X85 > 
+RN_X86 > KSA United Ribbon
+RD_X86 > 
+RN_X87 > Kerman Empire Ribbon
+RD_X87 > 
+RN_X88 > Kanada Ribbon
+RD_X88 > 
+RN_X89 > Kitaly Ribbon
+RD_X89 > 
+RN_X90 > Mexika Ribbon
+RD_X90 > 
+RN_X91 > Brasilika Ribbon
+RD_X91 > 
+RN_X92 > Kapan Ribbon
+RD_X92 > 
+RN_X93 > Koland Ribbon
+RD_X93 > 
+RN_X94 > United Kerbalkind Ribbon
+RD_X94 > 
+RN_X100 > 01 Custom Ribbon
+RD_X100 > 01 Custom
+RN_X101 > 02 Custom Ribbon
+RD_X101 > 02 Custom
+RN_X102 > 03 Custom Ribbon
+RD_X102 > 03 Custom
+RN_X103 > 04 Custom Ribbon
+RD_X103 > 04 Custom
+RN_X104 > 05 Custom Ribbon
+RD_X104 > 05 Custom
+RN_X105 > 06 Custom Ribbon
+RD_X105 > 06 Custom
+RN_X106 > 07 Custom Ribbon
+RD_X106 > 07 Custom
+RN_X107 > 08 Custom Ribbon
+RD_X107 > 08 Custom
+RN_X108 > 09 Custom Ribbon
+RD_X108 > 09 Custom
+RN_X109 > 10 Custom Ribbon
+RD_X109 > 10 Custom
+RN_X110 > 11 Custom Ribbon
+RD_X110 > 11 Custom
+RN_X111 > 12 Custom Ribbon
+RD_X111 > 12 Custom
+RN_X112 > 13 Custom Ribbon
+RD_X112 > 13 Custom
+RN_X113 > 14 Custom Ribbon
+RD_X113 > 14 Custom
+RN_X114 > 15 Custom Ribbon
+RD_X114 > 15 Custom
+RN_X115 > 16 Custom Ribbon
+RD_X115 > 16 Custom
+RN_X116 > 17 Custom Ribbon
+RD_X116 > 17 Custom
+RN_X117 > 18 Custom Ribbon
+RD_X117 > 18 Custom
+RN_X118 > 19 Custom Ribbon
+RD_X118 > 19 Custom
+RN_X119 > 20 Custom Ribbon
+RD_X119 > 20 Custom
+#
+RN_DANGEROUS_EVA_0  > Dangerous EVA
+RD_DANGEROUS_EVA_0  > Awarded for executing EVA while not in a stable orbit
+RN_SPLASHDOWN_0     > Splashdown
+RD_SPLASHDOWN_0     > Awarded for a splashdown of a vessel in water
+RN_FAST_ORBIT_0     > Fast Orbit
+RD_FAST_ORBIT_0     > Awarded for less than $ seconds into orbit
+RN_MISSION_TIME_0     > Mission Time
+RD_MISSION_TIME_0     > Awarded for more than $ days spent in missions
+RN_ENDURACNE_0     > Endurance
+RD_ENDURACNE_0     > Awarded for more than $ days spent in a single mission and returning safely
+RN_EVA_ENDURACNE_0     > EVA Endurance
+RD_EVA_ENDURACNE_0     > Awarded for continuously spending $ in EVA
