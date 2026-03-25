@@ -14,17 +14,47 @@ namespace Nereid
          private static readonly Char[] TEXT_SEPARATORS = new Char[] { TEXT_DELIM };
          private static readonly Char[] FIELD_SEPARATORS = new Char[] { ' ' };
 
+         // Entry types: normal award/action, or explicit revocation
+         public const String TYPE_AWARD = "AWARD";
+         public const String TYPE_REVOKE = "REVOKE";
+
          public double UniversalTime { get; set; }
          public String Code { get; set; }
          public String Name { get; set; }
          public String Data { get; set; }
+         // Who created this entry (system username — unique per player machine)
+         public String Player { get; set; }
+         // Real-world timestamp (Unix ms) for tie-breaking across machines
+         public long WallTime { get; set; }
+         // AWARD (default) or REVOKE
+         public String EntryType { get; set; }
+
+         private static readonly long EPOCH_TICKS = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc).Ticks;
+         private static long NowUnixMs()
+         {
+            return (System.DateTime.UtcNow.Ticks - EPOCH_TICKS) / System.TimeSpan.TicksPerMillisecond;
+         }
+
+         public static String LocalPlayer()
+         {
+            return System.Environment.UserName ?? "Unknown";
+         }
+
+         public bool IsRevoke { get { return TYPE_REVOKE.Equals(EntryType, System.StringComparison.OrdinalIgnoreCase); } }
 
          public LogbookEntry(double time, String code, String name, String text = "")
+            : this(time, code, name, text, LocalPlayer(), NowUnixMs(), TYPE_AWARD) { }
+
+         public LogbookEntry(double time, String code, String name, String text,
+            String player, long wallTime, String entryType)
          {
             this.UniversalTime = time;
             this.Code = code;
             this.Name = name!=null?name:"";
             this.Data = text;
+            this.Player = player ?? LocalPlayer();
+            this.WallTime = wallTime > 0 ? wallTime : NowUnixMs();
+            this.EntryType = string.IsNullOrEmpty(entryType) ? TYPE_AWARD : entryType;
             //
             if (Name.Contains(TEXT_DELIM))
             {

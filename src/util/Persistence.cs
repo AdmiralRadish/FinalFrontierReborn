@@ -41,6 +41,9 @@ namespace Nereid
                   entryNode.AddValue(Constants.CONFIGNODE_KEY_NAME, entry.Name);
                   entryNode.AddValue(Constants.CONFIGNODE_KEY_CODE, entry.Code);
                   entryNode.AddValue(Constants.CONFIGNODE_KEY_DATA, entry.Data);
+                  entryNode.AddValue(Constants.CONFIGNODE_KEY_PLAYER, entry.Player);
+                  entryNode.AddValue(Constants.CONFIGNODE_KEY_WALLTIME, entry.WallTime.ToString());
+                  entryNode.AddValue(Constants.CONFIGNODE_KEY_TYPE, entry.EntryType);
                   node.AddNode(entryNode);
                }
             }
@@ -82,11 +85,17 @@ namespace Nereid
                   String code = childNode.GetValue(Constants.CONFIGNODE_KEY_CODE);
                   String name = childNode.GetValue(Constants.CONFIGNODE_KEY_NAME);
                   String data = childNode.GetValue(Constants.CONFIGNODE_KEY_DATA);
+                  String player = childNode.GetValue(Constants.CONFIGNODE_KEY_PLAYER);
+                  String sWall = childNode.GetValue(Constants.CONFIGNODE_KEY_WALLTIME);
+                  String type = childNode.GetValue(Constants.CONFIGNODE_KEY_TYPE);
 
                   try
                   {
                      double time = Double.Parse(sTime);
-                     logbook.Add(new LogbookEntry(time, code, name, data));
+                     long wallTime = 0;
+                     if (!string.IsNullOrEmpty(sWall)) long.TryParse(sWall, out wallTime);
+                     logbook.Add(new LogbookEntry(time, code, name, data ?? "",
+                        player ?? "", wallTime, type ?? ""));
                   }
                   catch
                   {
@@ -111,6 +120,56 @@ namespace Nereid
          public static String[] GetSaveGameFolders()
          {
             return Directory.GetDirectories(SAVE_BASE_FOLDER);
+         }
+
+         /***************************************************************************************************************
+          * Shadow logbook — local persistent backup that survives LMP scenario overwrites
+          ***************************************************************************************************************/
+
+         private static readonly String SHADOW_DIR = ROOT_PATH + "/PluginData/FinalFrontier";
+         private static readonly String SHADOW_PATH = SHADOW_DIR + "/shadow.cfg";
+         private const String SHADOW_ROOT_NODE = "FF_SHADOW_LOG";
+
+         public static void SaveShadowLog(List<LogbookEntry> logbook)
+         {
+            try
+            {
+               Directory.CreateDirectory(SHADOW_DIR);
+               ConfigNode root = new ConfigNode(SHADOW_ROOT_NODE);
+               SaveHallOfFame(logbook, root);
+               ConfigNode wrapper = new ConfigNode();
+               wrapper.AddNode(root);
+               wrapper.Save(SHADOW_PATH);
+               Log.Info("shadow log saved (" + logbook.Count + " entries)");
+            }
+            catch (Exception e)
+            {
+               Log.Error("failed to save shadow log: " + e.Message);
+            }
+         }
+
+         public static List<LogbookEntry> LoadShadowLog()
+         {
+            try
+            {
+               if (!File.Exists(SHADOW_PATH))
+               {
+                  Log.Info("no shadow log found at " + SHADOW_PATH);
+                  return new List<LogbookEntry>();
+               }
+               ConfigNode wrapper = ConfigNode.Load(SHADOW_PATH);
+               if (wrapper == null) return new List<LogbookEntry>();
+               ConfigNode root = wrapper.GetNode(SHADOW_ROOT_NODE);
+               if (root == null) return new List<LogbookEntry>();
+               List<LogbookEntry> result = LoadHallOfFame(root);
+               Log.Info("shadow log loaded (" + result.Count + " entries)");
+               return result;
+            }
+            catch (Exception e)
+            {
+               Log.Error("failed to load shadow log: " + e.Message);
+               return new List<LogbookEntry>();
+            }
          }
 
          /***************************************************************************************************************

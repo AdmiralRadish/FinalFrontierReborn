@@ -39,6 +39,9 @@ namespace Nereid
          public const String CONFIGNODE_KEY_NAME = "name";
          public const String CONFIGNODE_KEY_CODE = "code";
          public const String CONFIGNODE_KEY_DATA = "data";
+         public const String CONFIGNODE_KEY_PLAYER = "player";
+         public const String CONFIGNODE_KEY_WALLTIME = "walltime";
+         public const String CONFIGNODE_KEY_TYPE = "type";
 
          public const String OLD_NODE_ROOT_NAME = "FinalFrontierHallOfFameRoot";
 

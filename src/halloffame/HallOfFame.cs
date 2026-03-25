@@ -104,12 +104,22 @@ namespace Nereid
 
             if ( loaded != null )
             {
-               Log.Info("hall of fame loaded (" + logbook.Count + " logbook entries)");
+               Log.Info("hall of fame loaded (" + loaded.Count + " logbook entries from file, " + logbook.Count + " existing in memory)");
+
+               // Also load the local shadow log to recover entries that may have been
+               // lost due to LMP's last-write-wins scenario sync
+               List<LogbookEntry> shadow = Persistence.LoadShadowLog();
+               Log.Info("shadow log has " + shadow.Count + " entries");
+
+               // Three-way merge: in-memory + incoming scenario + shadow
+               List<LogbookEntry> merged = MergeLogbooks(logbook, loaded);
+               merged = MergeLogbooks(merged, shadow);
+               Log.Info("merged logbook has " + merged.Count + " entries");
 
                Log.Detail("data for logbook loaded");
                //
                this.loaded = true;
-               CreateFromLogbook(loaded);
+               CreateFromLogbook(merged);
             }
             else
             {
@@ -119,6 +129,52 @@ namespace Nereid
 
             // for debugging the lost ribbons issue
             DumpStatistics();
+         }
+
+         /**
+          * Merge two logbooks, returning the union of both with duplicates removed.
+          * A duplicate is identified by matching (UniversalTime, Code, Name, Player, EntryType).
+          * Including Player allows different players' independent entries to coexist.
+          * Sorted by game time, with wall-clock time as tie-breaker.
+          */
+         private List<LogbookEntry> MergeLogbooks(List<LogbookEntry> existing, List<LogbookEntry> incoming)
+         {
+            // Start with a copy of the existing entries
+            List<LogbookEntry> merged = new List<LogbookEntry>(existing);
+
+            // Build a set of keys from the existing entries for fast lookup
+            HashSet<string> existingKeys = new HashSet<string>();
+            foreach (LogbookEntry entry in existing)
+            {
+               existingKeys.Add(LogbookEntryKey(entry));
+            }
+
+            // Add any incoming entries that don't already exist
+            foreach (LogbookEntry entry in incoming)
+            {
+               string key = LogbookEntryKey(entry);
+               if (!existingKeys.Contains(key))
+               {
+                  merged.Add(entry);
+                  existingKeys.Add(key);
+               }
+            }
+
+            // Sort by game time, then wall-clock for tie-breaking
+            merged.Sort((a, b) =>
+            {
+               int cmp = a.UniversalTime.CompareTo(b.UniversalTime);
+               if (cmp != 0) return cmp;
+               return a.WallTime.CompareTo(b.WallTime);
+            });
+
+            return merged;
+         }
+
+         private static string LogbookEntryKey(LogbookEntry entry)
+         {
+            return entry.UniversalTime.ToString("R") + "|" + entry.Code + "|" + entry.Name
+               + "|" + (entry.Player ?? "") + "|" + (entry.EntryType ?? LogbookEntry.TYPE_AWARD);
          }
 
          /**
@@ -132,6 +188,8 @@ namespace Nereid
             lock(this)
             {
                Persistence.SaveHallOfFame(logbook, node);
+               // Write shadow log so entries survive LMP's last-write-wins sync
+               Persistence.SaveShadowLog(logbook);
             }
          }
 
@@ -467,7 +525,11 @@ namespace Nereid
 
 
          /**
-          * Remova a ribbon
+          * Revoke a ribbon by adding a REVOKE entry to the logbook.
+          * The REVOKE entry propagates via scenario sync like any other entry,
+          * and cancels the matching award during CreateFromLogbook.
+          * If the revoked ribbon was a "first" achievement, it becomes available
+          * for someone else to earn.
           */
          public void Revocation(ProtoCrewMember kerbal, Ribbon ribbon, bool removeSuperseded = false)
          {
@@ -475,15 +537,25 @@ namespace Nereid
             HallOfFameEntry entry = GetEntry(kerbal);
             if(entry!=null)
             {
-               bool successs = entry.Revocation(ribbon);
-               if (!successs) return;
-               //
-               LogbookEntry logEntry;
-               while ( (logEntry=logbook.Find(x => x.Name.Equals(kerbal.name) && x.Code.Equals(ribbon.GetCode())))!=null)
+               bool success = entry.Revocation(ribbon);
+               if (!success) return;
+
+               // Append a REVOKE entry instead of deleting — append-only log
+               double now = Planetarium.GetUniversalTime();
+               LogbookEntry revokeEntry = new LogbookEntry(now, ribbon.GetCode(), kerbal.name,
+                  "", LogbookEntry.LocalPlayer(), 0, LogbookEntry.TYPE_REVOKE);
+               logbook.Add(revokeEntry);
+
+               // If this was a "first" achievement, remove from accomplished set
+               // so someone else can earn it
+               Achievement achievement = ribbon.GetAchievement();
+               if (achievement.HasToBeFirst())
                {
-                  logbook.Remove(logEntry);
+                  accomplished.Remove(achievement);
+                  Log.Info("first achievement '" + ribbon.GetName() + "' is now available for re-earn after revocation");
                }
-               // remove superseeded ribbons?
+
+               // remove superseded ribbons?
                if(removeSuperseded)
                {
                   Ribbon superseded = ribbon.SupersedeRibbon();
@@ -633,6 +705,36 @@ namespace Nereid
 
             double time = HighLogic.CurrentGame.UniversalTime;
 
+            // If the game clock hasn't been synced yet (e.g. LMP multiplayer startup),
+            // use the max logbook time so that server entries aren't discarded as "future"
+            if (book.Count > 0)
+            {
+               double maxLogbookTime = 0;
+               foreach (LogbookEntry entry in book)
+               {
+                  if (entry.UniversalTime > maxLogbookTime) maxLogbookTime = entry.UniversalTime;
+               }
+               if (maxLogbookTime > time)
+               {
+                  Log.Info("game time (" + time + ") is behind logbook max time (" + maxLogbookTime + "), using logbook max time as cutoff");
+                  time = maxLogbookTime;
+               }
+            }
+
+            // Pre-scan: build a set of (Code, Name) pairs that have been revoked.
+            // A REVOKE entry cancels all prior AWARDs for that (Code, Name).
+            // Multiple REVOKE entries for the same (Code, Name) are fine — idempotent.
+            HashSet<string> revokedKeys = new HashSet<string>();
+            foreach (LogbookEntry log in book)
+            {
+               if (log.IsRevoke)
+               {
+                  revokedKeys.Add(log.Code + "|" + log.Name);
+               }
+            }
+            if (revokedKeys.Count > 0)
+               Log.Info("found " + revokedKeys.Count + " revoked (code,name) pairs");
+
             lock (this)
             {
                if (book.Count == 0)
@@ -647,11 +749,32 @@ namespace Nereid
 
                foreach (LogbookEntry log in book)
                {
-                  if (Log.IsLogable(Log.LEVEL.TRACE)) Log.Trace("processing logbook entry " + log.UniversalTime + ": " + log.Code + " " + log.Name);
+                  if (Log.IsLogable(Log.LEVEL.TRACE)) Log.Trace("processing logbook entry " + log.UniversalTime + ": " + log.Code + " " + log.Name + " type=" + log.EntryType);
 
                   if (log.UniversalTime > time)
                   {
-                     Log.Detail("logbook entry skipped, because of time constraint: " + log.UniversalTime + " > " + time);
+                     // Still add to logbook so it isn't lost, but don't process
+                     logbook.Add(log);
+                     Log.Detail("logbook entry deferred (future time): " + log.UniversalTime + " > " + time);
+                     continue;
+                  }
+
+                  // REVOKE entries: keep in logbook for propagation, but don't process as awards
+                  if (log.IsRevoke)
+                  {
+                     logbook.Add(log);
+                     continue;
+                  }
+
+                  // Skip AWARD entries that have been revoked
+                  string revokeKey = log.Code + "|" + log.Name;
+                  if (revokedKeys.Contains(revokeKey))
+                  {
+                     // Still keep in logbook so the original award propagates
+                     // (the REVOKE entry also propagates and will cancel it on other clients)
+                     logbook.Add(log);
+                     if (Log.IsLogable(Log.LEVEL.DETAIL))
+                        Log.Detail("skipping revoked entry: " + log.Code + " for " + log.Name);
                      continue;
                   }
 
