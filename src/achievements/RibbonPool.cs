@@ -122,7 +122,7 @@ namespace Nereid
                int basePrestige = mapper.GetBasePrestige(body);
 
                String BODY_RIBBON_PATH = mapper.GetRibbonPath(body, _RP)+bodyName;
-               Log.Info("ribbon path for " + bodyName + " is " + BODY_RIBBON_PATH);
+               Log.Detail("ribbon path for " + bodyName + " is " + BODY_RIBBON_PATH);
 
                Log.Detail("creating ribbons for " + bodyName + ", base prestige is " + basePrestige + ", type is "+body.RevealType());
 
@@ -567,9 +567,10 @@ namespace Nereid
             //this.FirstGrandTourRibbon = new Ribbon(_RP+"FirstGrandTour", new GrandTourAchievement(55101, true), this.GrandTourRibbon);
             AddRibbon(this.GrandTourRibbon);
             //AddRibbon(this.FirstGrandTourRibbon);
-            // Jool Tour
-            CelestialBody jool = Utils.GetCelestialBody("Jool");
-            if(jool!=null)
+            // Jool Tour (or equivalent gas giant tour in RSS)
+            CelestialBody jool = Utils.GetCelestialBody("Jool")
+                              ?? Utils.GetCelestialBody("Jupiter");
+            if(jool!=null && jool.orbitingBodies.Count > 0)
             {
                this.JoolTourRibbon = new Ribbon(_RP + "JoolTour", new JoolTourAchievement(mapper.GetBasePrestige(jool) + 98, false));
                AddRibbon(this.JoolTourRibbon);

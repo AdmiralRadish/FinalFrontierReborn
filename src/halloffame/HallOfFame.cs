@@ -441,7 +441,7 @@ namespace Nereid
             {
                if (entry.Award(ribbon))
                {
-                  if (Log.IsLogable(Log.LEVEL.INFO) || FinalFrontier.configuration.logRibbonAwards)
+                  if (Log.IsLogable(Log.LEVEL.DETAIL) || FinalFrontier.configuration.logRibbonAwards)
                   {
                      // log directly to make log outputs independent from log level if FinalFrontier.configuration.logRibbonAwards is set to true
                      Debug.Log("FF: ribbon " + ribbon.GetName() + " awarded to " + kerbal.name + " at " + time+" ("+Utils.ConvertToKerbinTime(time)+")");

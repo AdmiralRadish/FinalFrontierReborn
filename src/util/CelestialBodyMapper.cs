@@ -28,7 +28,9 @@ namespace Nereid
          {
             if(IsLegacyBody(body))
             {
-               if (body.name.Equals("Jool")) return true;
+               if (body.name.Equals("Jool") || body.name.Equals("Jupiter")
+                   || body.name.Equals("Saturn") || body.name.Equals("Uranus")
+                   || body.name.Equals("Neptune")) return true;
                return false;
             }
             return info.GetBool(body, "", "gas giant", false);

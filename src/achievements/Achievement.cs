@@ -552,11 +552,12 @@ namespace Nereid
             // already visited, so no change
             if(entry.visitedCelestialBodies.Contains(this.body)) return;
 
-            // Jool Tour
+            // Jool Tour (or equivalent gas giant tour in planet packs like RSS)
             if (!entry.joolTour)
             {
-               CelestialBody jool = GameUtils.GetCelestialBody("Jool");
-               if (jool != null)
+               CelestialBody jool = Utils.GetCelestialBody("Jool")
+                                 ?? Utils.GetCelestialBody("Jupiter");
+               if (jool != null && jool.orbitingBodies.Count > 0)
                {
                   bool allVisited = true;
                   foreach (CelestialBody moon in jool.orbitingBodies)
@@ -1083,7 +1084,7 @@ namespace Nereid
       class JoolTourAchievement : Achievement
       {
          public JoolTourAchievement(int prestige, bool first)
-            : base("JT" + (first ? "1" : ""), "Jool Tour", prestige, first)
+            : base("JT" + (first ? "1" : ""), "Gas Giant Tour", prestige, first)
          {
 
          }
@@ -1092,7 +1093,9 @@ namespace Nereid
 
          public override String GetDescription()
          {
-            return "Awarded for" + FirstKerbalText().Envelope() + "entering the sphere of influence of all moons of Jool";
+            CelestialBody giant = Utils.GetCelestialBody("Jool") ?? Utils.GetCelestialBody("Jupiter");
+            string name = giant != null ? giant.name : "the gas giant";
+            return "Awarded for" + FirstKerbalText().Envelope() + "entering the sphere of influence of all moons of " + name;
          }
       }
 
