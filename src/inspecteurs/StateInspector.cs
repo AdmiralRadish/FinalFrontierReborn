@@ -163,7 +163,7 @@ namespace Nereid
                this.maxGeeForce = gForce;
                int g = (int)gForce;
                double now = Planetarium.GetUniversalTime();
-               if (g < MAX_GEE)
+               if (g >= 0 && g < MAX_GEE)
                {
                   if(gTimeOf[g] <= 0)
                   {
