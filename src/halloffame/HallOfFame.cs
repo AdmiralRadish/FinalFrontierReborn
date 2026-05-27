@@ -95,26 +95,155 @@ namespace Nereid
             return true;
          }
 
+         // Name of the LMP-managed save folder. Saves under this folder may only earn
+         // ribbons while connected to an LMP server; otherwise the Hall of Fame is
+         // frozen so singleplayer play cannot leak back to the server on reconnect.
+         private const string LMP_SAVE_FOLDER = "LunaMultiplayer";
+
+         /// <summary>
+         /// True if the active save folder is the LMP-managed "LunaMultiplayer" folder.
+         /// </summary>
+         private static bool IsLmpSave()
+         {
+            try
+            {
+               return string.Equals(HighLogic.SaveFolder, LMP_SAVE_FOLDER, StringComparison.Ordinal);
+            }
+            catch
+            {
+               return false;
+            }
+         }
+
+         /// <summary>
+         /// True if LunaMultiplayer is loaded and the client has reached at least
+         /// ScenariosSynced (21). At this point server scenarios have been synced and
+         /// can be treated as authoritative for Hall of Fame loading.
+         /// Uses reflection so FinalFrontier has no hard dependency on LMP.
+         /// </summary>
+         private static bool IsLmpReadyForScenarioLoad()
+         {
+            try
+            {
+               foreach (System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+               {
+                  Type t = asm.GetType("LmpClient.MainSystem", false);
+                  if (t == null) continue;
+                  var prop = t.GetProperty("NetworkState",
+                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                  if (prop == null) return false;
+                  object val = prop.GetValue(null, null);
+                  if (val == null) return false;
+                  // ClientState.ScenariosSynced = 21; this is early enough for
+                  // authoritative scenario load during join.
+                  int state = Convert.ToInt32(val);
+                  return state >= 21;
+               }
+            }
+            catch (Exception e)
+            {
+               Log.Warning("LMP state probe failed: " + e.Message);
+            }
+            return false;
+         }
+
+         /// <summary>
+         /// True if LunaMultiplayer is fully running (ClientState.Running = 36).
+         /// Keep save gate strict so disconnected or mid-join sessions cannot push
+         /// Hall of Fame data back out.
+         /// </summary>
+         private static bool IsLmpReadyForSave()
+         {
+            try
+            {
+               foreach (System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+               {
+                  Type t = asm.GetType("LmpClient.MainSystem", false);
+                  if (t == null) continue;
+                  var prop = t.GetProperty("NetworkState",
+                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                  if (prop == null) return false;
+                  object val = prop.GetValue(null, null);
+                  if (val == null) return false;
+                  int state = Convert.ToInt32(val);
+                  return state >= 36;
+               }
+            }
+            catch (Exception e)
+            {
+               Log.Warning("LMP state probe failed: " + e.Message);
+            }
+            return false;
+         }
+
+         /// <summary>
+         /// Wipe all in-memory Hall of Fame state. Used when refusing a load or when
+         /// taking the server scenario as the sole source of truth on an LMP load.
+         /// </summary>
+         private void ClearInMemoryState()
+         {
+            lock (this)
+            {
+               logbook.Clear();
+               accomplished.Clear();
+               currentTransaction.Clear();
+               entries.Clear();
+               mapOfEntries.Clear();
+            }
+         }
+
          /**
           * Persistence: Load HallOfFame
           */
          public void Load(ConfigNode node)
          {
+            bool isLmp = IsLmpSave();
+            bool lmpConnected = isLmp && IsLmpReadyForScenarioLoad();
+
+            if (isLmp && !lmpConnected)
+            {
+               // LunaMultiplayer save loaded in singleplayer mode. Refuse to load
+               // anything so no ribbons can be earned this session, and so any
+               // stale entries in persistent.sfs are not surfaced. This guarantees
+               // singleplayer play cannot pollute the server on reconnect.
+               Log.Warning("LunaMultiplayer save loaded without an active LMP server connection. "
+                  + "Hall of Fame load skipped to prevent server pollution.");
+               ClearInMemoryState();
+               this.loaded = true;
+               DumpStatistics();
+               return;
+            }
+
             List<LogbookEntry> loaded = Persistence.LoadHallOfFame(node);
 
             if ( loaded != null )
             {
                Log.Info("hall of fame loaded (" + loaded.Count + " logbook entries from file, " + logbook.Count + " existing in memory)");
 
-               // Also load the local shadow log to recover entries that may have been
-               // lost due to LMP's last-write-wins scenario sync
-               List<LogbookEntry> shadow = Persistence.LoadShadowLog();
-               Log.Info("shadow log has " + shadow.Count + " entries");
+               List<LogbookEntry> merged;
+               if (lmpConnected)
+               {
+                  // Connected to LMP server: the scenario node was written by LMP from
+                  // server state and is the single source of truth. Discard any local
+                  // in-memory state and skip the shadow log so nothing local can leak.
+                  Log.Info("LMP-connected load: using server scenario as authoritative ("
+                     + loaded.Count + " entries); shadow log and in-memory state discarded");
+                  ClearInMemoryState();
+                  merged = loaded;
+               }
+               else
+               {
+                  // Non-LMP save: original three-way merge behaviour.
+                  // Also load the local shadow log to recover entries that may have been
+                  // lost due to LMP's last-write-wins scenario sync.
+                  List<LogbookEntry> shadow = Persistence.LoadShadowLog();
+                  Log.Info("shadow log has " + shadow.Count + " entries");
 
-               // Three-way merge: in-memory + incoming scenario + shadow
-               List<LogbookEntry> merged = MergeLogbooks(logbook, loaded);
-               merged = MergeLogbooks(merged, shadow);
-               Log.Info("merged logbook has " + merged.Count + " entries");
+                  // Three-way merge: in-memory + incoming scenario + shadow
+                  merged = MergeLogbooks(logbook, loaded);
+                  merged = MergeLogbooks(merged, shadow);
+                  Log.Info("merged logbook has " + merged.Count + " entries");
+               }
 
                Log.Detail("data for logbook loaded");
                //
@@ -185,11 +314,30 @@ namespace Nereid
             // for debugging the lost ribbons issue
             DumpStatistics();
 
+            bool isLmp = IsLmpSave();
+            bool lmpConnected = isLmp && IsLmpReadyForSave();
+
             lock(this)
             {
+               if (isLmp && !lmpConnected)
+               {
+                  // Singleplayer load of the LunaMultiplayer save. Do not write the
+                  // scenario and do not update the shadow log; the scenario LMP will
+                  // later push to the server must stay clean.
+                  Log.Warning("LunaMultiplayer save without server connection: "
+                     + "skipping Hall of Fame save to prevent server pollution.");
+                  return;
+               }
+
                Persistence.SaveHallOfFame(logbook, node);
-               // Write shadow log so entries survive LMP's last-write-wins sync
-               Persistence.SaveShadowLog(logbook);
+
+               if (!isLmp)
+               {
+                  // Shadow log is only useful for non-LMP saves. On the LMP save the
+                  // server is the source of truth, so a local shadow would only ever
+                  // create another way for stale data to merge back in.
+                  Persistence.SaveShadowLog(logbook);
+               }
             }
          }
 

@@ -59,6 +59,40 @@ namespace Nereid
          }
 
 
+         /// <summary>
+         /// Check if an entry should be filtered out (junk from test missions, etc)
+         /// </summary>
+         private static bool IsJunkEntry(double time, String code, String name, String player)
+         {
+            // Filter out known junk entries from test missions
+            // These were accumulated from non-server test/debug saves
+            
+            // List of known junk player/time combinations to reject
+            // Format: player name suffixes that indicate test missions
+            String[] testPlayers = new[] { "Evan" };
+            
+            // If player matches a test player name AND time is in test range, it's junk
+            if (!string.IsNullOrEmpty(player))
+            {
+               foreach (String testPlayer in testPlayers)
+               {
+                  if (player.Contains(testPlayer))
+                  {
+                     // Check if time looks like a test mission (e.g., very large met values)
+                     // Test missions often have huge accumulated time values
+                     // Server missions are more recent and have reasonable met values
+                     if (time > 2378500000)  // Arbitrary threshold for test mission timestamps
+                     {
+                        Log.Detail("Filtering junk entry: time=" + time + " code=" + code + " player=" + player + " name=" + name);
+                        return true;
+                     }
+                  }
+               }
+            }
+
+            return false;
+         }
+
          public static List<LogbookEntry> LoadHallOfFame(ConfigNode node)
          {
             Log.Info("loading hall of fame");
@@ -76,6 +110,8 @@ namespace Nereid
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
+            int junkCount = 0;
+
             try
             {
                foreach (ConfigNode childNode in node.GetNodes())
@@ -92,6 +128,14 @@ namespace Nereid
                   try
                   {
                      double time = Double.Parse(sTime);
+                     
+                     // Filter out junk entries from test missions
+                     if (IsJunkEntry(time, code, name, player))
+                     {
+                        junkCount++;
+                        continue;
+                     }
+                     
                      long wallTime = 0;
                      if (!string.IsNullOrEmpty(sWall)) long.TryParse(sWall, out wallTime);
                      logbook.Add(new LogbookEntry(time, code, name, data ?? "",
@@ -102,6 +146,12 @@ namespace Nereid
                      Log.Error("corrupt data in child node");
                   }
                }
+               
+               if (junkCount > 0)
+               {
+                  Log.Info("Filtered out " + junkCount + " junk entries during hall of fame load");
+               }
+               
                return logbook;
             }
             catch

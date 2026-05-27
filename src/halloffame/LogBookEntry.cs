@@ -29,6 +29,7 @@ namespace Nereid
          // AWARD (default) or REVOKE
          public String EntryType { get; set; }
 
+
          private static readonly long EPOCH_TICKS = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc).Ticks;
          private static long NowUnixMs()
          {
